@@ -3,7 +3,7 @@ Radiocut.fm downloader
 
 Radiocut_ is an amazing service that records radio station from Latin America in 24x7 basis, and let you create cuts for an specific station and time.
 
-This script download and merge the chunks that compose an audiocut.
+This script retrieves and merges the chunks that compose an audiocut.
 
 Install
 -------

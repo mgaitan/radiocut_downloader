@@ -12,22 +12,37 @@ from pyquery import PyQuery
 import requests
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 def radiocut(url):
+
     print('Retrieving {}'.format(url))
     title = url.split('/')[-2] + '.mp3'
     pq = PyQuery(url)
     seconds = pq('li.audio_seconds').text()
+
     duration = pq('li.audio_duration').text()
     station = pq('li.audio_station').text()
     base_url = pq('li.audio_base_url').text()
 
-    chunks_url = "{}/server/get_chunks/{}/{}/".format(base_url, station, seconds[:6])
-    chunks_json = requests.get(chunks_url).json()[seconds[:6]]
-    base_url = chunks_json['baseURL']
-    chunks = chunks_json['chunks']
+    start_folder = int(seconds[:6])
+    chunks = []
+    while True:
+        chunks_url = "{}/server/get_chunks/{}/{:d}/".format(base_url, station, start_folder)
+        print('Getting chunks index {}'.format(chunks_url))
+        chunks_json = requests.get(chunks_url).json()[str(start_folder)]
+        for chunk_data in chunks_json['chunks']:
+            # set the base_url if isnt defined
+            chunk_data['base_url'] = chunk_data.get('base_url', chunks_json['baseURL'])
+            chunks.append(chunk_data)
+        c = chunks[-1]
+        if c['start'] + c['length'] > float(seconds) + float(duration):
+            break
+        # if the last chunk isn't in this index, get the next one
+        start_folder += 1
+
+    print(len(chunks))
     print('Looking for first chunk')
     for i, c in enumerate(chunks):
         if c['start'] + c['length'] > float(seconds):
@@ -39,15 +54,15 @@ def radiocut(url):
             last_chunk = min(len(chunks), first_chunk + i + 1)
             break
 
-    audios = [get_mp3(chunk, base_url) for chunk in chunks[first_chunk:last_chunk]]
+    audios = [get_mp3(chunk) for chunk in chunks[first_chunk:last_chunk]]
     start_offset = float(seconds) - chunks[first_chunk]['start']
     cut = concatenate_audioclips(audios)
     cut = cut.subclip(start_offset, start_offset + float(duration))
     cut.write_audiofile(title)
 
 
-def get_mp3(chunk, base_url=''):
-    url = chunk.get('base_url', base_url) + '/' + chunk.get('filename')
+def get_mp3(chunk):
+    url = chunk['base_url'] + '/' + chunk['filename']
     print('Downloading chunk {}'.format(url))
     r = requests.get(url, stream=True)
     if r.status_code == 200:
@@ -60,7 +75,6 @@ def get_mp3(chunk, base_url=''):
 def main():
     from docopt import docopt
     arguments = docopt(__doc__, version=__version__)
-    print(arguments)
     radiocut(arguments['<audiocut_url>'])
 
 if __name__ == '__main__':
