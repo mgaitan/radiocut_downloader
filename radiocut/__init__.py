@@ -1,7 +1,7 @@
 """radiocut.fm downloader
 
 Usage:
-  radiocut <audiocut_url>
+  radiocut <audiocut_url> [<output-file-name>]
 
 Options:
   -h --help     Show this screen.
@@ -12,13 +12,14 @@ from pyquery import PyQuery
 import requests
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 
-__version__ = '0.2'
+__version__ = '0.2.1'
 
 
-def radiocut(url):
+def radiocut(url, output_file_name=None):
 
     print('Retrieving {}'.format(url))
-    title = url.split('/')[-2] + '.mp3'
+
+
     pq = PyQuery(url)
     seconds = pq('li.audio_seconds').text()
 
@@ -58,7 +59,9 @@ def radiocut(url):
     start_offset = float(seconds) - chunks[first_chunk]['start']
     cut = concatenate_audioclips(audios)
     cut = cut.subclip(start_offset, start_offset + float(duration))
-    cut.write_audiofile(title)
+    if output_file_name is None:
+        output_file_name = url.split('/')[-2] + '.mp3'
+    cut.write_audiofile(str(output_file_name))
 
 
 def get_mp3(chunk):
@@ -75,7 +78,7 @@ def get_mp3(chunk):
 def main():
     from docopt import docopt
     arguments = docopt(__doc__, version=__version__)
-    radiocut(arguments['<audiocut_url>'])
+    radiocut(arguments['<audiocut_url>'], arguments['<output-file-name>'])
 
 if __name__ == '__main__':
     main()
