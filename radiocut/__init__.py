@@ -1,7 +1,7 @@
 """radiocut.fm downloader
 
 Usage:
-  radiocut <audiocut_url> [<output-file-name>] [--verbose]
+  radiocut <audiocut_url> [<output-file-name>] [--verbose] [--background=<path-to-image>]
 
 Options:
   -h --help     Show this screen.
@@ -11,14 +11,18 @@ import sys
 import tempfile
 from pyquery import PyQuery
 import requests
-from moviepy.editor import AudioFileClip, concatenate_audioclips
+from moviepy.editor import AudioFileClip, ImageClip, concatenate_audioclips
 
 __version__ = '0.2.1'
 
 AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/?')
 
 
-def radiocut(url, output_file_name=None, verbose=False):
+def get_radiocut(url, verbose=False):
+    """
+    Given an "audio cut" url, return a moviepy's AudioClip instance with the cut
+    """
+
     if verbose:
         print('Retrieving {}'.format(url))
 
@@ -64,9 +68,7 @@ def radiocut(url, output_file_name=None, verbose=False):
     start_offset = float(seconds) - chunks[first_chunk]['start']
     cut = concatenate_audioclips(audios)
     cut = cut.subclip(start_offset, start_offset + float(duration))
-    if output_file_name is None:
-        output_file_name = url.split('/')[-2] + '.mp3'
-    cut.write_audiofile(str(output_file_name), fps=16000, nbytes=2, bitrate='16k', verbose=verbose)
+    return cut
 
 
 def get_mp3(chunk, verbose=False):
@@ -91,7 +93,35 @@ def main():
         sys.exit(1)
     if not url.endswith('/'):
         url += '/'
-    radiocut(url, arguments['<output-file-name>'], bool(arguments['--verbose']))
+    verbose = bool(arguments['--verbose'])
+
+    audio_clip = get_radiocut(url, verbose)
+    background = arguments['--background']
+    extension = 'mp4' if background else 'mp3'
+
+    output_file_name = arguments['<output-file-name>']
+    if output_file_name is None:
+        output_file_name = '{}.{}'.format(url.split('/')[-2], extension)
+
+    if not background:
+        audio_clip.write_audiofile(
+            str(output_file_name),
+            fps=16000,
+            nbytes=2,
+            bitrate='16k',
+            verbose=verbose
+        )
+    else:
+        clip = ImageClip(background, duration=audio_clip.duration)
+        clip = clip.set_audio(audio_clip)
+        clip.write_videofile(
+            str(output_file_name),
+            fps=1,
+            audio_fps=16000,
+            audio_nbytes=2,
+            audio_bitrate='16k',
+            verbose=verbose
+        )
 
 
 if __name__ == '__main__':
