@@ -1,7 +1,7 @@
 """radiocut.fm downloader
 
 Usage:
-  radiocut <audiocut_url> [<output-file-name>]
+  radiocut <audiocut_url> [<output-file-name>] [--verbose]
 
 Options:
   -h --help     Show this screen.
@@ -15,12 +15,12 @@ from moviepy.editor import AudioFileClip, concatenate_audioclips
 
 __version__ = '0.2.1'
 
-AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/')
+AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/?')
 
 
-def radiocut(url, output_file_name=None):
-
-    print('Retrieving {}'.format(url))
+def radiocut(url, output_file_name=None, verbose=False):
+    if verbose:
+        print('Retrieving {}'.format(url))
 
     pq = PyQuery(url)
     seconds = pq('li.audio_seconds').text()
@@ -33,7 +33,8 @@ def radiocut(url, output_file_name=None):
     chunks = []
     while True:
         chunks_url = "{}/server/get_chunks/{}/{:d}/".format(base_url, station, start_folder)
-        print('Getting chunks index {}'.format(chunks_url))
+        if verbose:
+            print('Getting chunks index {}'.format(chunks_url))
         chunks_json = requests.get(chunks_url).json()[str(start_folder)]
         for chunk_data in chunks_json['chunks']:
             # set the base_url if isnt defined
@@ -45,30 +46,33 @@ def radiocut(url, output_file_name=None):
         # if the last chunk isn't in this index, get the next one
         start_folder += 1
 
-    print(len(chunks))
-    print('Looking for first chunk')
+    if verbose:
+        print(len(chunks))
+        print('Looking for first chunk')
     for i, c in enumerate(chunks):
         if c['start'] + c['length'] > float(seconds):
             first_chunk = i
             break
-    print('Looking for last chunk')
+    if verbose:
+        print('Looking for last chunk')
     for i, c in enumerate(chunks[first_chunk:]):
         if c['start'] + c['length'] > float(seconds) + float(duration):
             last_chunk = min(len(chunks), first_chunk + i + 1)
             break
 
-    audios = [get_mp3(chunk) for chunk in chunks[first_chunk:last_chunk]]
+    audios = [get_mp3(chunk, verbose=verbose) for chunk in chunks[first_chunk:last_chunk]]
     start_offset = float(seconds) - chunks[first_chunk]['start']
     cut = concatenate_audioclips(audios)
     cut = cut.subclip(start_offset, start_offset + float(duration))
     if output_file_name is None:
         output_file_name = url.split('/')[-2] + '.mp3'
-    cut.write_audiofile(str(output_file_name))
+    cut.write_audiofile(str(output_file_name), fps=16000, nbytes=2, bitrate='16k', verbose=verbose)
 
 
-def get_mp3(chunk):
+def get_mp3(chunk, verbose=False):
     url = chunk['base_url'] + '/' + chunk['filename']
-    print('Downloading chunk {}'.format(url))
+    if verbose:
+        print('Downloading chunk {}'.format(url))
     r = requests.get(url, stream=True)
     if r.status_code == 200:
         _, p = tempfile.mkstemp('.mp3')
@@ -81,12 +85,14 @@ def get_mp3(chunk):
 def main():
     from docopt import docopt
     arguments = docopt(__doc__, version=__version__)
-    url = arguments['<audiocut_url>'].partition('#')[0]         # remove anchor
+    url = arguments['<audiocut_url>'].partition('#')[0]
     if not re.match(AUDIOCUT_PATTERN, url):
         print('The given URL is invalid. Example: http://radiocut.fm/audiocut/macri-gato/')
         sys.exit(1)
+    if not url.endswith('/'):
+        url += '/'
+    radiocut(url, arguments['<output-file-name>'], bool(arguments['--verbose']))
 
-    radiocut(url, arguments['<output-file-name>'])
 
 if __name__ == '__main__':
     main()
