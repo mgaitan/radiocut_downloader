@@ -6,7 +6,8 @@ Usage:
 Options:
   -h --help     Show this screen.
 """
-
+import re
+import sys
 import tempfile
 from pyquery import PyQuery
 import requests
@@ -14,11 +15,12 @@ from moviepy.editor import AudioFileClip, concatenate_audioclips
 
 __version__ = '0.2.1'
 
+AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/')
+
 
 def radiocut(url, output_file_name=None):
 
     print('Retrieving {}'.format(url))
-
 
     pq = PyQuery(url)
     seconds = pq('li.audio_seconds').text()
@@ -75,10 +77,16 @@ def get_mp3(chunk):
                 f.write(chunk)
         return AudioFileClip(p)
 
+
 def main():
     from docopt import docopt
     arguments = docopt(__doc__, version=__version__)
-    radiocut(arguments['<audiocut_url>'], arguments['<output-file-name>'])
+    url = arguments['<audiocut_url>'].partition('#')[0]         # remove anchor
+    if not re.match(AUDIOCUT_PATTERN, url):
+        print('The given URL is invalid. Example: http://radiocut.fm/audiocut/macri-gato/')
+        sys.exit(1)
+
+    radiocut(url, arguments['<output-file-name>'])
 
 if __name__ == '__main__':
     main()
