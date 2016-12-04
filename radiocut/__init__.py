@@ -15,7 +15,7 @@ from pyquery import PyQuery
 import requests
 from moviepy.editor import AudioFileClip, ImageClip, concatenate_audioclips
 
-__version__ = '0.2.1'
+__version__ = '0.3'
 
 AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/?')
 PODCAST_PATTERN = re.compile('https?://radiocut\.fm/pdc/[-\w]+/[-\w]+/?')
