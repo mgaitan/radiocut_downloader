@@ -1,10 +1,12 @@
 """radiocut.fm downloader
 
 Usage:
-  radiocut <audiocut_url> [<output-file-name>] [--verbose] [--background=<path-to-image>]
+  radiocut <audiocut_or_podcast> [<output-file-name>] [--verbose] [--background=<path-to-image>] [--join]
 
 Options:
-  -h --help     Show this screen.
+  -h --help                         Show this screen.
+  --background=<path-to-image>      If given, produce a video with this image as background
+  --join                            Concatenate podcast's cuts as a single file
 """
 import re
 import sys
@@ -16,9 +18,10 @@ from moviepy.editor import AudioFileClip, ImageClip, concatenate_audioclips
 __version__ = '0.2.1'
 
 AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/?')
+PODCAST_PATTERN = re.compile('https?://radiocut\.fm/pdc/[-\w]+/[-\w]+/?')
 
 
-def get_radiocut(url, verbose=False):
+def get_audiocut(url, verbose=False):
     """
     Given an "audio cut" url, return a moviepy's AudioClip instance with the cut
     """
@@ -71,6 +74,13 @@ def get_radiocut(url, verbose=False):
     return cut
 
 
+def get_urls_from_podcast(url, verbose=False):
+    """given the url to a podcast, return the list of urls to each audiocut"""
+    pq = PyQuery(url)
+    pq.make_links_absolute()
+    return [PyQuery(a).attr('href') for a in pq('.cut_brief h4 a')]
+
+
 def get_mp3(chunk, verbose=False):
     url = chunk['base_url'] + '/' + chunk['filename']
     if verbose:
@@ -84,28 +94,22 @@ def get_mp3(chunk, verbose=False):
         return AudioFileClip(p)
 
 
-def main():
-    from docopt import docopt
-    arguments = docopt(__doc__, version=__version__)
-    url = arguments['<audiocut_url>'].partition('#')[0]
-    if not re.match(AUDIOCUT_PATTERN, url):
-        print('The given URL is invalid. Example: http://radiocut.fm/audiocut/macri-gato/')
-        sys.exit(1)
-    if not url.endswith('/'):
-        url += '/'
-    verbose = bool(arguments['--verbose'])
+def output_file_names(urls, given_filename=None, extension='mp3'):
 
-    audio_clip = get_radiocut(url, verbose)
-    background = arguments['--background']
-    extension = 'mp4' if background else 'mp3'
+    filenames = []
+    for i, url in enumerate(urls):
+        filename = given_filename or url.rstrip('/').split('/')[-1]
+        if i and given_filename:
+            filename = '{}_{}'.format(filename, i)
+        filenames.append('{}.{}'.format(filename, extension))
+    return filenames
 
-    output_file_name = arguments['<output-file-name>']
-    if output_file_name is None:
-        output_file_name = '{}.{}'.format(url.split('/')[-2], extension)
+
+def write_output(audio_clip, output_filename, background=None, verbose=False):
 
     if not background:
         audio_clip.write_audiofile(
-            str(output_file_name),
+            output_filename,
             fps=16000,
             nbytes=2,
             bitrate='16k',
@@ -115,13 +119,58 @@ def main():
         clip = ImageClip(background, duration=audio_clip.duration)
         clip = clip.set_audio(audio_clip)
         clip.write_videofile(
-            str(output_file_name),
+            output_filename,
             fps=1,
             audio_fps=16000,
             audio_nbytes=2,
             audio_bitrate='16k',
             verbose=verbose
         )
+
+
+def main():
+    from docopt import docopt
+    arguments = docopt(__doc__, version=__version__)
+
+    url = arguments['<audiocut_or_podcast>'].partition('#')[0]
+    is_audiocut = re.match(AUDIOCUT_PATTERN, url)
+    is_podcast = re.match(PODCAST_PATTERN, url)
+    if not is_audiocut and not is_podcast:
+        print("""The given URL is not a valid audiocut or podcast from radiocut.fm.
+Examples:
+    - http://radiocut.fm/audiocut/macri-gato/
+    - http://radiocut.fm/pdc/tin_nqn_/test
+""")
+        sys.exit(1)
+    if is_audiocut and not url.endswith('/'):
+        url += '/'
+    verbose = bool(arguments['--verbose'])
+
+    if is_podcast:
+        urls = get_urls_from_podcast(url, verbose)
+
+    else:
+        urls = [url]
+
+    audioclips = [get_audiocut(url, verbose) for url in urls]
+    background = arguments['--background']
+    extension = 'mp4' if background else 'mp3'
+
+    if arguments['--join'] or is_audiocut:
+        audioclips = [concatenate_audioclips(audioclips)]
+        output_filenames = output_file_names(
+            [url],
+            given_filename=arguments['<output-file-name>'],
+            extension=extension)
+    else:
+        output_filenames = output_file_names(
+            urls,
+            given_filename=arguments['<output-file-name>'],
+            extension=extension)
+
+    for clip, filename in zip(audioclips, output_filenames):
+        write_output(clip, filename, background, verbose=verbose)
+
 
 
 if __name__ == '__main__':
