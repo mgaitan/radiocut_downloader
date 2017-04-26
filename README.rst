@@ -1,7 +1,7 @@
-set_as_current=FalseRadiocut.fm downloader
+Radiocut.fm downloader
 ======================
 
-Radiocut_ is an amazing service that records radio stations from Latin America in 24x7 basis, and let you create cuts for an specific station and time.
+Radiocut_ is an amazing service that records radio stations from in 24x7 basis, and let you create cuts for an specific station and time.
 
 This script retrieves and merges the chunks that compose an audiocut,
 
