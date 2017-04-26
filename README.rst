@@ -1,4 +1,4 @@
-Radiocut.fm downloader
+set_as_current=FalseRadiocut.fm downloader
 ======================
 
 Radiocut_ is an amazing service that records radio stations from Latin America in 24x7 basis, and let you create cuts for an specific station and time.
@@ -39,7 +39,7 @@ Examples
 
     $ radiocut http://radiocut.fm/audiocut/macri-gato/    # macri-gato.mp3
 
-    $ radiocut http://radiocut.fm/audiocut/macri-gato/    # macri-gato.mp3 with verbose output
+    $ radiocut http://radiocut.fm/audiocut/macri-gato/  --verbose    # macri-gato.mp3 with verbose output
 
     $ radiocut http://radiocut.fm/pdc/tin_nqn_/test       # as many mp3 files, as "cuts" in the podcast. Us
 
