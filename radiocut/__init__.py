@@ -1,12 +1,14 @@
 """radiocut.fm downloader
 
 Usage:
-  radiocut <audiocut_or_podcast> [<output-file-name>] [--verbose] [--background=<path-to-image>] [--join]
+  radiocut <audiocut_or_podcast> [<output-file-name>]
+                        [--verbose] [--background=<path-to-image>] [--join] [--duration=<duration>]
 
 Options:
   -h --help                         Show this screen.
   --background=<path-to-image>      If given, produce a video with this image as background
   --join                            Concatenate podcast's cuts as a single file
+  --duration=<duration>             The length to download (in seconds)
 """
 import re
 import sys
@@ -19,9 +21,18 @@ __version__ = '0.3'
 
 AUDIOCUT_PATTERN = re.compile('https?://radiocut\.fm/audiocut/[-\w]+/?')
 PODCAST_PATTERN = re.compile('https?://radiocut\.fm/pdc/[-\w]+/[-\w]+/?')
+RADIOSTATION_PATTERN = re.compile('https?://radiocut\.fm/radiostation/.*')
+
+NOT_VALID_MSG = """
+The given URL is not a valid audiocut, podcast or timestamp from radiocut.fm.
+Examples:
+    - http://radiocut.fm/audiocut/macri-gato/
+    - http://radiocut.fm/pdc/tin_nqn_/test
+    - http://radiocut.fm/radiostation/nacional870/listen/2017/07/01/10/00/00/
+"""
 
 
-def get_audiocut(url, verbose=False):
+def get_audiocut(url, verbose=False, duration=None):
     """
     Given an "audio cut" url, return a moviepy's AudioClip instance with the cut
     """
@@ -31,8 +42,8 @@ def get_audiocut(url, verbose=False):
 
     pq = PyQuery(url)
     seconds = pq('li.audio_seconds').text()
-
-    duration = pq('li.audio_duration').text()
+    if duration is None:
+        duration = float(pq('li.audio_duration').text())
     station = pq('li.audio_station').text()
     base_url = pq('li.audio_base_url').text()
 
@@ -135,24 +146,23 @@ def main():
     url = arguments['<audiocut_or_podcast>'].partition('#')[0]
     is_audiocut = re.match(AUDIOCUT_PATTERN, url)
     is_podcast = re.match(PODCAST_PATTERN, url)
-    if not is_audiocut and not is_podcast:
-        print("""The given URL is not a valid audiocut or podcast from radiocut.fm.
-Examples:
-    - http://radiocut.fm/audiocut/macri-gato/
-    - http://radiocut.fm/pdc/tin_nqn_/test
-""")
+    is_radiostation = re.match(RADIOSTATION_PATTERN, url)
+    if not any([is_audiocut, is_podcast, is_radiostation]):
+        print(NOT_VALID_MSG)
         sys.exit(1)
     if is_audiocut and not url.endswith('/'):
         url += '/'
     verbose = bool(arguments['--verbose'])
+    duration = arguments['--duration']
+    if duration is not None:
+        duration = int(duration)
 
     if is_podcast:
         urls = get_urls_from_podcast(url, verbose)
-
     else:
         urls = [url]
 
-    audioclips = [get_audiocut(url, verbose) for url in urls]
+    audioclips = [get_audiocut(url, verbose, duration) for url in urls]
     background = arguments['--background']
     extension = 'mp4' if background else 'mp3'
 
@@ -170,7 +180,6 @@ Examples:
 
     for clip, filename in zip(audioclips, output_filenames):
         write_output(clip, filename, background, verbose=verbose)
-
 
 
 if __name__ == '__main__':
