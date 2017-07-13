@@ -25,12 +25,14 @@ Usage
     radiocut.fm downloader
 
     Usage:
-      radiocut <audiocut_or_podcast> [<output-file-name>] [--verbose] [--background=<path-to-image>] [--join]
+        radiocut <audiocut_or_podcast> [<output-file-name>]
+                        [--verbose] [--background=<path-to-image>] [--join] [--duration=<duration>]
 
     Options:
       -h --help                         Show this screen.
       --background=<path-to-image>      If given, produce a video with this image as background
       --join                            Concatenate podcast's cuts as a single file
+      --duration=<duration>             The length to download (in seconds)
 
 Examples
 --------
@@ -41,14 +43,13 @@ Examples
 
     $ radiocut http://radiocut.fm/audiocut/macri-gato/  --verbose    # macri-gato.mp3 with verbose output
 
-    $ radiocut http://radiocut.fm/pdc/tin_nqn_/test       # as many mp3 files, as "cuts" in the podcast. Us
+    $ radiocut http://radiocut.fm/pdc/tin_nqn_/test       # as many mp3 files, as "cuts" in the podcast
 
-
-    $ radiocut http://radiocut.fm/pdc/tin_nqn_/test  --join    # test.mp3  joining all the cuts sequentially
-
+    $ radiocut http://radiocut.fm/pdc/tin_nqn_/test  --join    # test.mp3 joining all the cuts sequentially
 
     $ radiocut http://radiocut.fm/pdc/tin_nqn_/test  --join --background=~/Images/black-cat.jpg   # test.mp4
 
+    $ radiocut http://radiocut.fm/radiostation/nacional870/listen/2017/07/08/10/00/00/ gentedeapie-20170708 --duration=7200
 
 
 .. attention::
