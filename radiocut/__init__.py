@@ -31,6 +31,10 @@ Examples:
     - http://radiocut.fm/radiostation/nacional870/listen/2017/07/01/10/00/00/
 """
 
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0',
+}
+
 
 def get_audiocut(url, verbose=False, duration=None):
     """
@@ -53,7 +57,7 @@ def get_audiocut(url, verbose=False, duration=None):
         chunks_url = "{}/server/get_chunks/{}/{:d}/".format(base_url, station, start_folder)
         if verbose:
             print('Getting chunks index {}'.format(chunks_url))
-        chunks_json = requests.get(chunks_url).json()[str(start_folder)]
+        chunks_json = requests.get(chunks_url, headers=HEADERS).json()[str(start_folder)]
         for chunk_data in chunks_json['chunks']:
             # set the base_url if isnt defined
             chunk_data['base_url'] = chunk_data.get('base_url', chunks_json['baseURL'])
@@ -96,7 +100,7 @@ def get_mp3(chunk, verbose=False):
     url = chunk['base_url'] + '/' + chunk['filename']
     if verbose:
         print('Downloading chunk {}'.format(url))
-    r = requests.get(url, stream=True)
+    r = requests.get(url, stream=True, headers=HEADERS)
     if r.status_code == 200:
         _, p = tempfile.mkstemp('.mp3')
         with open(p, 'wb') as f:
