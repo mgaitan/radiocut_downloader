@@ -19,7 +19,7 @@ setup(
     packages = find_packages(),
     license="BSD",
     zip_safe=False,
-    install_requires = ['docopt', 'pyquery', 'requests', 'moviepy'],
+    install_requires = ['docopt', 'pyquery', 'requests', 'moviepy', 'python-dateutil'],
     entry_points={
         'console_scripts': [
             'radiocut = radiocut:main',

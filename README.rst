@@ -47,9 +47,14 @@ Examples
 
     $ radiocut http://radiocut.fm/pdc/tin_nqn_/test  --join    # test.mp3 joining all the cuts sequentially
 
+
     $ radiocut http://radiocut.fm/pdc/tin_nqn_/test  --join --background=~/Images/black-cat.jpg   # test.mp4
 
-    $ radiocut http://radiocut.fm/radiostation/nacional870/listen/2017/07/08/10/00/00/ gentedeapie-20170708 --duration=7200
+    # get any fragment
+    $ radiocut http://radiocut.fm/radiostation/nacional870/listen/2017/07/08/10/00/00/ custom_2m_cut --duration=120
+
+    # get shows
+    $ radiocut https://radiocut.fm/radioshow/el-lobby/
 
 
 .. attention::
