@@ -16,6 +16,7 @@ import tempfile
 from dateutil.parser import parse
 from pyquery import PyQuery
 import requests
+import base64
 from moviepy.editor import AudioFileClip, ImageClip, concatenate_audioclips
 
 __version__ = '0.4'
@@ -39,6 +40,12 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0',
 }
 
+def get_chunks_url(base_url, station, start_folder):
+    code = base64.b64encode(bytes('win{}|{}dow'.format(station, start_folder), 'ascii'))
+    code = code.decode('ascii').replace('=', '~').replace('/', '_').replace('+', '-')
+    url = '{}/server/gec/web/{}/'.format(base_url, code)
+    return url
+
 def get_audiocut(url, verbose=False, duration=None):
     """
     Given an "audio cut" url, return a moviepy's AudioClip instance with the cut
@@ -57,7 +64,7 @@ def get_audiocut(url, verbose=False, duration=None):
     start_folder = int(seconds[:6])
     chunks = []
     while True:
-        chunks_url = "{}/server/get_chunks/{}/{:d}/".format(base_url, station, start_folder)
+        chunks_url = get_chunks_url(base_url, station, start_folder)
         if verbose:
             print('Getting chunks index {}'.format(chunks_url))
         chunks_json = requests.get(chunks_url, headers=HEADERS).json()[str(start_folder)]
