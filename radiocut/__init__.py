@@ -41,7 +41,11 @@ HEADERS = {
 }
 
 def get_chunks_url(base_url, station, start_folder):
-    code = base64.b64encode(bytes('win{}|{}dow'.format(station, start_folder), 'ascii'))
+    """
+    Computes first the (not too) 'obfuscated' code that the new chunks server requires
+    and returns the final URL.
+    """
+    code = base64.b64encode('win{}|{}dow'.format(station, start_folder).encode('ascii'))
     code = code.decode('ascii').replace('=', '~').replace('/', '_').replace('+', '-')
     url = '{}/server/gec/web/{}/'.format(base_url, code)
     return url
