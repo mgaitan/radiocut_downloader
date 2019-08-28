@@ -45,9 +45,9 @@ def get_chunks_url(base_url, station, start_folder):
     Computes first the (not too) 'obfuscated' code that the new chunks server requires
     and returns the final URL.
     """
-    code = base64.b64encode('win{}|{}dow'.format(station, start_folder).encode('ascii'))
+    code = base64.b64encode('andaa{}|{}cagar'.format(station, start_folder).encode('ascii'))
     code = code.decode('ascii').replace('=', '~').replace('/', '_').replace('+', '-')
-    url = '{}/server/gec/web/{}/'.format(base_url, code)
+    url = '{}/server/gec/www/{}/'.format(base_url, code)
     return url
 
 def get_audiocut(url, verbose=False, duration=None):

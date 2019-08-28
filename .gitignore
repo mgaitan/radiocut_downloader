@@ -1,0 +1,7 @@
+.vscode
+venv
+__pycache__
+build
+dist
+radiocut_downloader.egg-info
+*.pyc
