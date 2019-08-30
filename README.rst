@@ -1,6 +1,14 @@
 Radiocut.fm downloader
 ======================
 
+---------
+
+**NOTE**: This project will be no longer mantained from this repository. We have been contacted by the radiocut's owner who asked to stop doing this. See `#18 <https://github.com/mgaitan/radiocut_downloader/pull/18>`_ if you are curious. 
+¡Viva la radio! 
+
+---------
+
+
 Radiocut_ is an amazing service that records radio stations from in 24x7 basis, and let you create cuts for an specific station and time.
 
 This script retrieves and merges the chunks that compose an audiocut,
